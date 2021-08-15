@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // console.log(window.location)
-    // con()
     const host = window.location.host
     if (host.indexOf('usenix') > -1) {
         usenix()
@@ -11,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (host.indexOf('arxiv.org') > -1) {
         arxiv()
     }
-    if (host.indexOf('neurips') > -1) {
+    if (host.indexOf('nips') > -1) {
         neurips()
     }
 });
