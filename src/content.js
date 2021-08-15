@@ -1,5 +1,6 @@
-document.addEventListener('DOMContentLoaded', function() {
-    console.log(window.location)
+document.addEventListener('DOMContentLoaded', function () {
+    // console.log(window.location)
+    // con()
     const host = window.location.host
     if (host.indexOf('usenix') > -1) {
         usenix()
@@ -10,14 +11,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (host.indexOf('arxiv.org') > -1) {
         arxiv()
     }
+    if (host.indexOf('neurips') > -1) {
+        neurips()
+    }
 });
 
 function usenix() {
     let bib = document.getElementsByClassName("bibtex-text-entry bibtex-accordion-text-entry")[0].innerHTML;
     let rawStr = bib
-        /**
-         * remove redundant info 
-         */
+    /**
+     * remove redundant info 
+     */
     rawStr = rawStr.split('<br>').join("")
     const removeArr = ['isbn', 'url']
     for (let i of removeArr) {
@@ -79,7 +83,7 @@ function acm() {
     let format = 'bibTex'
     ajax.open('get', `${window.location.origin}/action/exportCiteProcCitation?dois=${dois}&targetFile=${targetFile}&format=${format}`);
     ajax.send(null);
-    ajax.onreadystatechange = function() {
+    ajax.onreadystatechange = function () {
         if (ajax.readyState == 4 && ajax.status == 200) {
             /**
              * process raw data
@@ -91,9 +95,9 @@ function acm() {
             let rawJSON = JSON.parse(rawStr)
             let rawObj = rawJSON[0][dois]
             let resArr = []
-                /**
-                 * process common data
-                 */
+            /**
+             * process common data
+             */
             let authorArr = []
             for (const i of rawObj.author) {
                 authorArr.push(`${i.family}, ${i.given}`)
@@ -145,7 +149,7 @@ function arxiv() {
     let dois = window.location.pathname.substring(diosIdx, window.location.pathname.length)
     ajax.open('get', `${window.location.origin}/bibtex/${dois}`);
     ajax.send(null);
-    ajax.onreadystatechange = function() {
+    ajax.onreadystatechange = function () {
         if (ajax.readyState == 4 && ajax.status == 200) {
             let rawStr = ajax.response
             rawStr = rawStr.replace('misc', 'article')
@@ -165,4 +169,23 @@ function arxiv() {
             console.log(rawStr)
         }
     }
+}
+
+function neurips() {
+    let resArr = []
+    resArr.push('@inproceedings{\n')
+    resArr.push(`title = {${document.getElementsByTagName("title")[0].innerHTML}},\n`)
+    let authorArr = []
+    let rawDOM = document.getElementsByName("citation_author");
+    for (let i of rawDOM) {
+        authorArr.push(`${i.content}`)
+    }
+    resArr.push(`author = {${authorArr.join(' and ')}}`)
+    resArr.push(`booktitle = {${document.getElementsByName("citation_journal_title")[0].content}},\n`)
+    let year = document.getElementsByName("citation_publication_date")[0].content
+    resArr.push(`year = {${year}},\n`)
+    resArr.push(`series = {NeurIPS '${year.slice(2, 4)}}\n`)
+    resArr.push('}')
+    navigator.clipboard.writeText(resArr.join(''))
+    console.log(resArr.join(''))
 }

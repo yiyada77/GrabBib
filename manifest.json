@@ -24,7 +24,8 @@
         "<all_urls>"
       ],
       "js": [
-        "src/content.js"
+        "src/content.js",
+        "src/utils.js"
       ],
       "run_at": "document_start"
     }
