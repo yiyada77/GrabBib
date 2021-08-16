@@ -1,21 +1,27 @@
 document.addEventListener('DOMContentLoaded', function () {
     const host = window.location.host
-    if (host.indexOf('usenix') > -1) {
-        usenix()
-    }
-    if (host.indexOf('acm.org') > -1) {
-        acm()
-    }
-    if (host.indexOf('arxiv.org') > -1) {
-        arxiv()
-    }
-    if (host.indexOf('nips') > -1) {
-        neurips()
+    switch (true) {
+        case (host.indexOf('usenix') > -1):
+            usenix();
+            break;
+        case (host.indexOf('acm.org') > -1):
+            acm();
+            break;
+        case (host.indexOf('arxiv.org') > -1):
+            arxiv();
+            break;
+        case (host.indexOf('nips') > -1):
+            neurips();
+            break;
+        case (host.indexOf('mlr.press') > -1):
+            icml();
+            break;
+        default: return;
     }
 });
 
 function usenix() {
-    let bib = document.getElementsByClassName("bibtex-text-entry bibtex-accordion-text-entry")[0].innerHTML;
+    let bib = document.getElementsByClassName("bibtex-text-entry bibtex-accordion-text-entry")[0].innerHTML
     let rawStr = bib
     /**
      * remove redundant info 
@@ -27,6 +33,11 @@ function usenix() {
         let endIdx = rawStr.indexOf(',', startIdx)
         rawStr = rawStr.replace(rawStr.substring(startIdx, endIdx + 3), '')
     }
+
+    let title = rawStr.substring(rawStr.indexOf('title') + 9, rawStr.indexOf('booktitle') - 4)
+    console.log(rawStr)
+    rawStr = replaceBibKey(title, rawStr)
+
     /**
      * identify YEAR & FLAG
      */
@@ -35,7 +46,9 @@ function usenix() {
     const usenixFlagMap = {
         '{OSDI}': 'OSDI',
         '{NSDI}': 'NSDI',
-        '{USENIX} {ATC}': 'ATC'
+        '{FAST}': 'FAST',
+        '{USENIX} {ATC}': 'ATC',
+        '{USENIX} Security': 'Security'
     }
     let FLAG
     for (let i in usenixFlagMap) {
@@ -43,13 +56,17 @@ function usenix() {
             FLAG = usenixFlagMap[i]
         }
     }
+
     let titleReplaceFlag, seriesReplaceItem
-    if (FLAG === 'OSDI' || FLAG === 'NSDI') {
+    if (FLAG === 'OSDI' || FLAG === 'NSDI' || FLAG === 'FAST') {
         titleReplaceFlag = ` ({${FLAG}} ${YEAR})`
         seriesReplaceItem = `series = {${FLAG} '${YEAR}},`
-    } else {
+    } else if (FLAG === 'ATC') {
         titleReplaceFlag = ` ({USENIX} {${FLAG}} ${YEAR})`
         seriesReplaceItem = `series = {{USENIX} {${FLAG}} '${YEAR}},`
+    } else if (FLAG === 'Security') {
+        titleReplaceFlag = ` ({USENIX} ${FLAG} ${YEAR})`
+        seriesReplaceItem = `series = {{USENIX} ${FLAG} '${YEAR}},`
     }
     const replaceFlagArr = ['month', titleReplaceFlag]
     const replaceItemArr = [seriesReplaceItem, '},']
@@ -58,7 +75,6 @@ function usenix() {
         let endIdx = rawStr.indexOf(',', startIdx)
         rawStr = rawStr.replace(rawStr.substring(startIdx, endIdx + 1), replaceItemArr[i])
     }
-    console.log(rawStr)
     navigator.clipboard.writeText(rawStr)
 }
 
@@ -100,22 +116,25 @@ function acm() {
             for (const i of rawObj.author) {
                 authorArr.push(`${i.family}, ${i.given}`)
             }
+
             /**
              * process unique data
              */
             if (rawObj.type === 'PAPER_CONFERENCE' || rawObj.type === 'CHAPTER') {
-                resArr.push(`@inproceedings{${rawObj.id},\n`)
+                let arr = document.getElementsByClassName("article__tocHeading");
+                const series = document.getElementsByClassName("article__tocHeading")[arr.length - 2].innerHTML
+                let key = grabBibKey(rawObj.title, `${series.match(/\d+(.\d+)?/g)}`)
+                resArr.push(`@inproceedings{${key},\n`)
                 resArr.push(`title = {${rawObj.title}},\n`)
                 resArr.push(`author = {${authorArr.join(' and ')}},\n`)
                 resArr.push(`booktitle = {${rawObj['container-title']}},\n`)
                 resArr.push(`publisher = {${rawObj.publisher}},\n`)
-                let arr = document.getElementsByClassName("article__tocHeading");
-                const series = document.getElementsByClassName("article__tocHeading")[arr.length - 2].innerHTML
                 resArr.push(`year = {20${series.match(/\d+(.\d+)?/g)}},\n`)
                 resArr.push(`series = {${series}}\n`)
             }
             if (rawObj.type === 'ARTICLE') {
-                resArr.push(`@article{${rawObj.id},\n`)
+                let key = grabBibKey(rawObj.title, `${rawObj.issued['date-parts'][0][0]}`)
+                resArr.push(`@article{${key},\n`)
                 resArr.push(`title = {${rawObj.title}},\n`)
                 resArr.push(`author = {${authorArr.join(' and ')}},\n`)
                 resArr.push(`journal = {${rawObj['container-title']}},\n`)
@@ -124,7 +143,6 @@ function acm() {
                 resArr.push(`year = {${rawObj.issued['date-parts'][0][0]}}\n`)
             }
             resArr.push('}')
-            console.log(resArr.join(''))
             navigator.clipboard.writeText(resArr.join(''))
         }
     }
@@ -150,6 +168,8 @@ function arxiv() {
     ajax.onreadystatechange = function () {
         if (ajax.readyState == 4 && ajax.status == 200) {
             let rawStr = ajax.response
+            let title = rawStr.substring(rawStr.indexOf('title') + 7, rawStr.indexOf('}'))
+            rawStr = replaceBibKey(title, rawStr)
             rawStr = rawStr.replace('misc', 'article')
             rawStr = rawStr.split('eprint').join('journal = {CoRR},\n      volume')
             let startIdx = rawStr.indexOf('volume={')
@@ -164,26 +184,55 @@ function arxiv() {
             let idx3 = rawStr.lastIndexOf(',')
             rawStr = rawStr.replace(rawStr.substring(idx3, rawStr.length), '\n}')
             navigator.clipboard.writeText(rawStr)
-            console.log(rawStr)
         }
     }
 }
 
 function neurips() {
+    let url = window.location.href
+    if (grabBibFromPDF(url)) {
+        return;
+    }
+
     let resArr = []
-    resArr.push('@inproceedings{\n')
-    resArr.push(`title = {${document.getElementsByTagName("title")[0].innerHTML}},\n`)
     let authorArr = []
-    let rawDOM = document.getElementsByName("citation_author");
+    let rawDOM = document.getElementsByName("citation_author")
+    let year = document.getElementsByName("citation_publication_date")[0].content
+    let title = document.getElementsByTagName("title")[0].innerHTML
+    let key = grabBibKey(title, year)
+
     for (let i of rawDOM) {
         authorArr.push(`${i.content}`)
     }
-    resArr.push(`author = {${authorArr.join(' and ')}}`)
+
+    resArr.push(`@inproceedings{${key},\n`)
+    resArr.push(`title = {${title}},\n`)
+    resArr.push(`author = {${authorArr.join(' and ')}},\n`)
     resArr.push(`booktitle = {${document.getElementsByName("citation_journal_title")[0].content}},\n`)
-    let year = document.getElementsByName("citation_publication_date")[0].content
     resArr.push(`year = {${year}},\n`)
     resArr.push(`series = {NeurIPS '${year.slice(2, 4)}}\n`)
     resArr.push('}')
+
     navigator.clipboard.writeText(resArr.join(''))
-    console.log(resArr.join(''))
+}
+
+function icml() {
+    // let url = window.location.href
+    // if (grabBibFromPDF(url)) {
+    //     return;
+    // }
+
+    let bib = document.getElementsByClassName("citecode")[0].innerHTML
+    bib = bib.replace(bib.substring(bib.indexOf('volume')), '')
+
+    let year = bib.substring(bib.indexOf('year') + 10, bib.indexOf('year') + 14)
+    bib = bib.replace(bib.substring(bib.indexOf('editor'), bib.lastIndexOf(',') + 1), `series = {ICML '${year.slice(2, 4)}}\n}`)
+
+    console.log(bib)
+    // const inputElement = document.querySelector('#input'); inputElement.select();
+    // document.execCommand('copy')
+    // import { clipboard } from '@bumble/clipboard'
+    // // clipboard.writeText('write this to the clipboard')
+    // // clipboardData.setData("Text", bib)
+    // // navigator.clipboard.writeText(bib)
 }
