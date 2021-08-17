@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function () {
         case (host.indexOf('acm.org') > -1):
             acm();
             break;
+        case (host.indexOf('ieee.org') > -1):
+            ieee();
+            break;
         case (host.indexOf('arxiv.org') > -1):
             arxiv();
             break;
@@ -15,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function () {
             break;
         case (host.indexOf('mlr.press') > -1):
             icml();
+            break;
+        case (host.indexOf('openreview') > -1):
+            iclr();
             break;
         default: return;
     }
@@ -217,22 +223,60 @@ function neurips() {
 }
 
 function icml() {
-    // let url = window.location.href
-    // if (grabBibFromPDF(url)) {
-    //     return;
-    // }
+    let url = window.location.href
+    if (grabBibFromPDF(url)) {
+        return;
+    }
 
     let bib = document.getElementsByClassName("citecode")[0].innerHTML
     bib = bib.replace(bib.substring(bib.indexOf('volume')), '')
-
     let year = bib.substring(bib.indexOf('year') + 10, bib.indexOf('year') + 14)
+    let title = bib.substring(bib.indexOf('title') + 11, bib.indexOf('}'))
+    let key = grabBibKey(title, year)
+
+    bib = bib.replace(bib.substring(bib.indexOf('{') + 1, bib.indexOf(',') + 1), `${key},`)
     bib = bib.replace(bib.substring(bib.indexOf('editor'), bib.lastIndexOf(',') + 1), `series = {ICML '${year.slice(2, 4)}}\n}`)
 
-    console.log(bib)
     // const inputElement = document.querySelector('#input'); inputElement.select();
     // document.execCommand('copy')
     // import { clipboard } from '@bumble/clipboard'
     // // clipboard.writeText('write this to the clipboard')
     // // clipboardData.setData("Text", bib)
     // // navigator.clipboard.writeText(bib)
+}
+
+function iclr() {
+    // let url = window.location.href
+    // if (grabBibFromPDF(url)) {
+    //     return;
+    // }
+
+    let bib = document.getElementsByClassName("meta_row pull-left")[0].innerHTML
+    console.log(bib)
+    // bib = bib.replace(bib.substring(bib.indexOf('volume')), '')
+    // let year = bib.substring(bib.indexOf('year') + 10, bib.indexOf('year') + 14)
+    // let title = bib.substring(bib.indexOf('title') + 11, bib.indexOf('}'))
+    // let key = grabBibKey(title, year)
+
+    // bib = bib.replace(bib.substring(bib.indexOf('{') + 1, bib.indexOf(',') + 1), `${key},`)
+    // bib = bib.replace(bib.substring(bib.indexOf('editor'), bib.lastIndexOf(',') + 1), `series = {ICML '${year.slice(2, 4)}}\n}`)
+
+    // const inputElement = document.querySelector('#input'); inputElement.select();
+    // document.execCommand('copy')
+    // import { clipboard } from '@bumble/clipboard'
+    // // clipboard.writeText('write this to the clipboard')
+    // // clipboardData.setData("Text", bib)
+    // // navigator.clipboard.writeText(bib)
+}
+
+
+function ieee() {
+    // let url = window.location.href
+    // if (grabBibFromPDF(url)) {
+    //     return;
+    // }
+    let ajax = new XMLHttpRequest();
+    let bib = document.getElementsByClassName("layout-btn-white cite-this-btn")[0].innerHTML
+    console.log(bib)
+
 }

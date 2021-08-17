@@ -35,11 +35,17 @@ function replaceBibKey(title, rawStr) {
 
 function grabBibFromPDF(url) {
     if (url.indexOf('pdf') > -1) {
-        url = url.replace('file', 'hash')
-        url = url.replace('Paper.pdf', 'Abstract.html')
-        window.open(url)
-
+        if (url.indexOf('nips') > -1) {
+            url = url.replace('file', 'hash')
+            url = url.replace('Paper.pdf', 'Abstract.html')
+            window.open(url)
+        }
+        if (url.indexOf('mlr.press') > -1) {
+            url = url.replace(url.substring(url.lastIndexOf('/')), '.html')
+            window.open(url)
+        }
         return 1
     }
+    return 0
 }
 
